@@ -199,6 +199,19 @@ def retell_webhook():
 
     return jsonify({'status': 'ok'})
 
+def extract_address_from_transcript(transcript: str) -> str:
+    """Use Claude to extract the property address from transcript"""
+    response = claude_client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=100,
+        system="Extract the property address from this call transcript. Return ONLY the address (like '2922 N 12th St' or '123 Main Street'), nothing else. If no address found, return 'NONE'.",
+        messages=[
+            {"role": "user", "content": transcript}
+        ]
+    )
+    address = response.content[0].text.strip()
+    return None if address == 'NONE' else address
+
 def handle_call_ended(data: dict):
     """Process a completed call"""
     call_data = data.get('call', {})
@@ -215,21 +228,11 @@ def handle_call_ended(data: dict):
         user = find_user_by_phone(sf, caller_number)
         owner_id = user['Id'] if user else None
 
-        # Extract property address from transcript
-        # Look for patterns like "1234 Main Street" or after "property" or "address"
-        address_match = re.search(
-            r'(?:at|for|property|address|updating|left|finished)\s+(\d+\s+[\w\s]+(?:street|st|avenue|ave|road|rd|drive|dr|lane|ln|way|court|ct|circle|cir|boulevard|blvd))',
-            transcript.lower()
-        )
+        # Extract property address using Claude (much smarter than regex)
+        property_address = extract_address_from_transcript(transcript)
 
-        if not address_match:
-            # Try to find any address-like pattern
-            address_match = re.search(r'(\d+\s+[a-zA-Z]+\s+(?:street|st|avenue|ave|road|rd|drive|dr|lane|ln|way|court|ct|circle|cir|boulevard|blvd))', transcript.lower())
-
-        if not address_match:
+        if not property_address:
             return jsonify({'status': 'no_address_found', 'message': 'Could not identify property address'})
-
-        property_address = address_match.group(1).strip()
 
         # Find the Opportunity
         opp = find_opportunity_by_address(sf, property_address)
