@@ -196,7 +196,7 @@ def retell_webhook():
     """Handle Retell webhook for call events"""
     data = request.json
     event_type = data.get('event')
-    logger.info(f"Webhook received: event_type={event_type}")
+    logger.info(f"Webhook received: event_type={event_type}, keys={list(data.keys())}")
 
     if event_type == 'call_ended':
         return handle_call_ended(data)
@@ -220,11 +220,13 @@ def extract_address_from_transcript(transcript: str) -> str:
 
 def handle_call_ended(data: dict):
     """Process a completed call"""
-    call_data = data.get('call', {})
+    # Retell can send call data nested under 'call' or at top level
+    call_data = data.get('call', data)
     transcript = call_data.get('transcript', '')
     caller_number = call_data.get('from_number', '')
 
     logger.info(f"Processing call_ended. Transcript length: {len(transcript)}, from: {caller_number}")
+    logger.info(f"Call data keys: {list(call_data.keys())}")
 
     if not transcript:
         logger.warning("No transcript in call data")
