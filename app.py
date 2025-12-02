@@ -5,12 +5,17 @@ Handles Retell webhooks and updates Salesforce
 import os
 import json
 import re
+import logging
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from simple_salesforce import Salesforce
 import anthropic
 
 app = Flask(__name__)
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Salesforce connection
 def get_sf_connection():
@@ -191,6 +196,7 @@ def retell_webhook():
     """Handle Retell webhook for call events"""
     data = request.json
     event_type = data.get('event')
+    logger.info(f"Webhook received: event_type={event_type}")
 
     if event_type == 'call_ended':
         return handle_call_ended(data)
@@ -218,33 +224,45 @@ def handle_call_ended(data: dict):
     transcript = call_data.get('transcript', '')
     caller_number = call_data.get('from_number', '')
 
+    logger.info(f"Processing call_ended. Transcript length: {len(transcript)}, from: {caller_number}")
+
     if not transcript:
+        logger.warning("No transcript in call data")
         return jsonify({'status': 'no_transcript'})
 
     try:
         sf = get_sf_connection()
+        logger.info("SF connection established")
 
         # Find the user (AE) by phone
         user = find_user_by_phone(sf, caller_number)
         owner_id = user['Id'] if user else None
+        logger.info(f"User lookup: {user['Name'] if user else 'Not found'}")
 
         # Extract property address using Claude (much smarter than regex)
         property_address = extract_address_from_transcript(transcript)
+        logger.info(f"Extracted address: {property_address}")
 
         if not property_address:
+            logger.warning("Could not extract address from transcript")
             return jsonify({'status': 'no_address_found', 'message': 'Could not identify property address'})
 
         # Find the Opportunity
         opp = find_opportunity_by_address(sf, property_address)
         if not opp:
+            logger.warning(f"Opportunity not found for address: {property_address}")
             return jsonify({'status': 'opportunity_not_found', 'address': property_address})
+
+        logger.info(f"Found opportunity: {opp['Name']} ({opp['Id']})")
 
         # Extract structured data from transcript
         extracted = extract_data_from_transcript(transcript, property_address)
+        logger.info(f"Extracted data keys: {list(extracted.keys()) if extracted else 'None'}")
 
         # Update the Opportunity
         if extracted:
             update_opportunity(sf, opp['Id'], extracted)
+            logger.info(f"Updated opportunity {opp['Id']}")
 
         # Create any tasks
         tasks_created = []
@@ -258,6 +276,7 @@ def handle_call_ended(data: dict):
                     task.get('due_date')
                 )
                 tasks_created.append(task_id)
+            logger.info(f"Created {len(tasks_created)} tasks")
 
         return jsonify({
             'status': 'success',
@@ -268,6 +287,7 @@ def handle_call_ended(data: dict):
         })
 
     except Exception as e:
+        logger.error(f"Error processing call: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 def handle_call_analyzed(data: dict):
