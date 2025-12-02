@@ -77,7 +77,7 @@ Extract the following fields (return null if not mentioned):
 
 IMPORTANT:
 - Convert dollar amounts to integers (e.g., "320k" = 320000, "$195,000" = 195000)
-- Infer stage from context if not explicitly stated (e.g., if they made an offer, stage is likely "Offer Made")
+- For stage: ONLY extract if the AE explicitly states the stage (e.g., "this is a hot lead", "put them in nurture", "mark it warm"). Do NOT guess or infer the stage - return null if not explicitly mentioned.
 - Extract emotional/motivation details into appropriate notes fields
 - If no contract was signed at the appointment, ALWAYS extract not_closeable_reason - what prevented the close?
 
