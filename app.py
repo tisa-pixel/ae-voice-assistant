@@ -186,6 +186,54 @@ def create_task(sf, opp_id: str, owner_id: str, subject: str, due_date: str = No
     result = sf.Task.create(task_data)
     return result['id']
 
+def log_call_activity(sf, opp_id: str, owner_id: str, call_data: dict, transcript: str) -> str:
+    """Log the Poppy debrief call as a completed Task activity"""
+    call_id = call_data.get('call_id', 'unknown')
+    recording_url = call_data.get('recording_url', '')
+    call_duration = call_data.get('call_length', 0)  # in seconds
+
+    # Format duration as minutes:seconds
+    minutes = int(call_duration // 60)
+    seconds = int(call_duration % 60)
+    duration_str = f"{minutes}:{seconds:02d}"
+
+    # Build description with links and transcript
+    description_parts = [
+        f"Poppy AE Debrief Call",
+        f"Duration: {duration_str}",
+        f"Call ID: {call_id}",
+    ]
+
+    if recording_url:
+        description_parts.append(f"\nRecording: {recording_url}")
+
+    # Add transcript (truncate if too long - SF has 32k limit)
+    if transcript:
+        max_transcript_len = 30000  # Leave room for other content
+        if len(transcript) > max_transcript_len:
+            transcript = transcript[:max_transcript_len] + "\n\n[Transcript truncated]"
+        description_parts.append(f"\n\n--- TRANSCRIPT ---\n{transcript}")
+
+    description = "\n".join(description_parts)
+
+    task_data = {
+        'Subject': 'Poppy Debrief Call',
+        'WhatId': opp_id,
+        'OwnerId': owner_id,
+        'ActivityDate': datetime.now().strftime('%Y-%m-%d'),
+        'Status': 'Completed',
+        'Priority': 'Normal',
+        'Type': 'Call',
+        'Description': description,
+        'CallDurationInSeconds': int(call_duration) if call_duration else None
+    }
+
+    # Remove None values
+    task_data = {k: v for k, v in task_data.items() if v is not None}
+
+    result = sf.Task.create(task_data)
+    return result['id']
+
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({'status': 'healthy', 'agent': 'Poppy'})
@@ -265,7 +313,13 @@ def handle_call_ended(data: dict):
             update_opportunity(sf, opp['Id'], extracted)
             logger.info(f"Updated opportunity {opp['Id']}")
 
-        # Create any tasks
+        # Log the call as an activity
+        call_activity_id = None
+        if owner_id:
+            call_activity_id = log_call_activity(sf, opp['Id'], owner_id, call_data, transcript)
+            logger.info(f"Logged call activity: {call_activity_id}")
+
+        # Create any follow-up tasks from extracted data
         tasks_created = []
         if extracted.get('tasks') and owner_id:
             for task in extracted['tasks']:
@@ -277,13 +331,14 @@ def handle_call_ended(data: dict):
                     task.get('due_date')
                 )
                 tasks_created.append(task_id)
-            logger.info(f"Created {len(tasks_created)} tasks")
+            logger.info(f"Created {len(tasks_created)} follow-up tasks")
 
         return jsonify({
             'status': 'success',
             'opportunity_id': opp['Id'],
             'opportunity_name': opp['Name'],
             'fields_updated': list(extracted.keys()) if extracted else [],
+            'call_activity_id': call_activity_id,
             'tasks_created': tasks_created
         })
 
