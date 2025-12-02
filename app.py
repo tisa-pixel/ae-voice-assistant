@@ -59,12 +59,12 @@ Extract the following fields (return null if not mentioned):
 - lowest_accept: Lowest price seller will accept as integer
 - options_presented: true/false - were purchase options presented?
 - option_notes: Notes about option presentation
-- obstacle: What's preventing contract signing
+- obstacle: What's preventing contract signing right now
 - next_step: What happens next
 - post_appt_notes: General notes from the appointment
 - marketing_notes: Marketing-related observations
 - repair_notes: Details about property repairs needed
-- not_closeable_reason: If not closeable, why?
+- not_closeable_reason: Why did the AE leave without a signed contract? (e.g., price gap, seller needs time, competing offers, title issues, etc.) - ALWAYS populate this if no contract was signed
 - post_om_email_sent: true/false - was post-offer email sent?
 - tasks: Array of tasks to create, each with "subject" and optional "due_date" (YYYY-MM-DD)
 
@@ -72,6 +72,7 @@ IMPORTANT:
 - Convert dollar amounts to integers (e.g., "320k" = 320000, "$195,000" = 195000)
 - Infer stage from context if not explicitly stated (e.g., if they made an offer, stage is likely "Offer Made")
 - Extract emotional/motivation details into appropriate notes fields
+- If no contract was signed at the appointment, ALWAYS extract not_closeable_reason - what prevented the close?
 
 Return valid JSON only, no markdown formatting.
 """
