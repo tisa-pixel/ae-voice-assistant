@@ -67,7 +67,7 @@ Extract the following fields (return null if not mentioned):
 - option_notes: Notes about option presentation - what options were discussed
 - obstacle: What's preventing contract signing right now
 - property_walk_thru: Notes from the property walkthrough - condition, observations, etc.
-- seller_declined_offer: true/false or notes - did the seller decline the offer?
+- seller_declined_offer: One of [Yes, No, Counter Offered, Considering, No Response] - did the seller decline the offer price?
 - next_step: What happens next
 - post_appt_notes: General notes from the appointment
 - marketing_notes: Marketing-related observations
