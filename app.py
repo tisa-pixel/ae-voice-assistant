@@ -17,6 +17,10 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Simple in-memory cache to prevent duplicate webhook processing
+# Stores call_id -> timestamp of processing
+processed_calls = {}
+
 # Salesforce connection
 def get_sf_connection():
     return Salesforce(
@@ -323,11 +327,26 @@ def handle_call_ended(data: dict):
     """Process a completed call"""
     # Retell can send call data nested under 'call' or at top level
     call_data = data.get('call', data)
+    call_id = call_data.get('call_id', '')
     transcript = call_data.get('transcript', '')
     caller_number = call_data.get('from_number', '')
 
-    logger.info(f"Processing call_ended. Transcript length: {len(transcript)}, from: {caller_number}")
+    logger.info(f"Processing call_ended. Call ID: {call_id}, Transcript length: {len(transcript)}, from: {caller_number}")
     logger.info(f"Call data keys: {list(call_data.keys())}")
+
+    # Check for duplicate webhook - Retell sometimes sends multiple times
+    if call_id and call_id in processed_calls:
+        logger.info(f"Skipping duplicate webhook for call_id: {call_id}")
+        return jsonify({'status': 'duplicate', 'call_id': call_id})
+
+    # Mark this call as being processed
+    if call_id:
+        processed_calls[call_id] = datetime.now()
+        # Clean up old entries (older than 1 hour) to prevent memory growth
+        cutoff = datetime.now() - timedelta(hours=1)
+        expired = [k for k, v in processed_calls.items() if v < cutoff]
+        for k in expired:
+            del processed_calls[k]
 
     if not transcript:
         logger.warning("No transcript in call data")
