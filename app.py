@@ -50,9 +50,13 @@ TRANSCRIPT:
 {transcript}
 
 Extract the following fields (return null if not mentioned):
-- stage: One of [New Lead, Contacted, Appointment Set, Attended, Offer Made, Under Contract, Nurture, Closed Won, Closed Lost]
+- stage: One of [Appointment Set, Warm, Hot, Nurture, Contract Signed, Closed Won, Closed Lost]
+  * Warm = interested but not urgent, needs follow-up
+  * Hot = very interested, likely to close soon
+  * Nurture = long-term follow-up needed
+  * Contract Signed = got the contract signed
 - nurture_reason: Only if stage is Nurture - one of [3-6 Months, 6-9 Months, 9-24 Months, Uncontacted, Cold, Property Currently List, Skiptrace Needed, SOLD, Check Back, Below Mortgage]
-- appointment_attended: true/false - did the AE attend the appointment?
+- appointment_attended: true/false - did the AE attend the appointment? (usually true for debrief calls)
 - arv: After Repair Value as integer (no $ or commas)
 - rehab_cost: Estimated repair costs as integer
 - last_offer: Last offer made to seller as integer
