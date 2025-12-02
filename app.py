@@ -104,6 +104,30 @@ Return valid JSON only, no markdown formatting.
             return json.loads(match.group())
         return {}
 
+def normalize_address(address: str) -> str:
+    """Normalize address for better matching"""
+    addr = address.lower().strip()
+    # Standardize common abbreviations
+    replacements = {
+        ' street': ' st', ' st.': ' st',
+        ' avenue': ' ave', ' ave.': ' ave',
+        ' drive': ' dr', ' dr.': ' dr',
+        ' road': ' rd', ' rd.': ' rd',
+        ' boulevard': ' blvd', ' blvd.': ' blvd',
+        ' lane': ' ln', ' ln.': ' ln',
+        ' court': ' ct', ' ct.': ' ct',
+        ' place': ' pl', ' pl.': ' pl',
+        ' circle': ' cir', ' cir.': ' cir',
+        ' west': ' w', ' w.': ' w',
+        ' east': ' e', ' e.': ' e',
+        ' north': ' n', ' n.': ' n',
+        ' south': ' s', ' s.': ' s',
+        ',': '', ' - ': ' ', '-': ' ',
+    }
+    for old, new in replacements.items():
+        addr = addr.replace(old, new)
+    return addr
+
 def find_opportunity_by_address(sf, address: str) -> dict:
     """Find an Opportunity by address (Name field)"""
     # Clean up address for search
@@ -116,17 +140,37 @@ def find_opportunity_by_address(sf, address: str) -> dict:
     if results['totalSize'] == 1:
         return results['records'][0]
     elif results['totalSize'] > 1:
-        # Return first match but log that there were multiple
         return results['records'][0]
 
-    # Try with just street number and name
+    # Try with just street number and street name (first 2-3 words)
     parts = clean_address.split()
     if len(parts) >= 2:
+        # Try "4116 W Iowa" style (number + direction + street)
         partial = f"{parts[0]} {parts[1]}"
         query = f"SELECT Id, Name, StageName FROM Opportunity WHERE Name LIKE '%{partial}%' LIMIT 5"
         results = sf.query(query)
         if results['totalSize'] >= 1:
             return results['records'][0]
+
+    # Try normalized matching - normalize both input and search by street number
+    if len(parts) >= 1 and parts[0].isdigit():
+        street_num = parts[0]
+        # Search by street number and check normalized versions
+        query = f"SELECT Id, Name, StageName FROM Opportunity WHERE Name LIKE '{street_num}%' LIMIT 20"
+        results = sf.query(query)
+
+        if results['totalSize'] >= 1:
+            normalized_input = normalize_address(address)
+            for record in results['records']:
+                normalized_name = normalize_address(record['Name'])
+                # Check if key parts match
+                if normalized_input.split()[0] in normalized_name:
+                    # Same street number, check street name
+                    input_words = set(normalized_input.split())
+                    name_words = set(normalized_name.split())
+                    # If they share the street number and at least one other word
+                    if len(input_words & name_words) >= 2:
+                        return record
 
     return None
 
