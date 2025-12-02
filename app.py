@@ -141,24 +141,26 @@ def update_opportunity(sf, opp_id: str, data: dict) -> bool:
     """Update Opportunity with extracted data"""
     update_fields = {}
 
+    # Map extracted data keys to SF field API names
+    # Note: Some fields commented out until deployed to SF org
     field_mapping = {
         'stage': 'StageName',
         'nurture_reason': 'Nurture_Reason__c',
-        'appointment_status': 'Appt_Status__c',
+        # 'appointment_status': 'Appt_Status__c',  # TODO: Deploy to SF
         'arv': 'ARV__c',
         'rehab_cost': 'Estimated_Rehab_Costs__c',
         'last_offer': 'Last_Offer_Made__c',
         'lowest_accept': 'Lowest_price_seller_will_accept__c',
-        'options_presented': 'Options_Presented__c',
-        'option_notes': 'Option_Presentation_Notes__c',
-        'obstacle': 'Obstacle_to_Contract__c',
+        # 'options_presented': 'Options_Presented__c',  # TODO: Deploy to SF
+        # 'option_notes': 'Option_Presentation_Notes__c',  # TODO: Deploy to SF
+        # 'obstacle': 'Obstacle_to_Contract__c',  # TODO: Deploy to SF
         'next_step': 'NextStep',
         'post_appt_notes': 'Post_Appointment_Notes__c',
         'marketing_notes': 'AE_Marketing_Notes__c',
         'repair_notes': 'AE_Repair_Notes__c',
-        'walk_thru_notes': 'Property_Walk_Thru__c',
+        # 'walk_thru_notes': 'Property_Walk_Thru__c',  # TODO: Deploy to SF
         'not_closeable_reason': 'Why_was_this_not_closable__c',
-        'post_om_email_sent': 'Post_OM_Email_Sent__c'
+        # 'post_om_email_sent': 'Post_OM_Email_Sent__c'  # TODO: Deploy to SF
     }
 
     for key, sf_field in field_mapping.items():
