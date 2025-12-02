@@ -56,20 +56,23 @@ Extract the following fields (return null if not mentioned):
   * Nurture = long-term follow-up needed
   * Contract Signed = got the contract signed
 - nurture_reason: Only if stage is Nurture - one of [3-6 Months, 6-9 Months, 9-24 Months, Uncontacted, Cold, Property Currently List, Skiptrace Needed, SOLD, Check Back, Below Mortgage]
+- appt_status: One of [Scheduled, Attended, No-Show, Cancelled, Rescheduled] - status of the appointment
 - appointment_attended: true/false - did the AE attend the appointment? (usually true for debrief calls)
+- ae_in_attendance: Name of the AE who attended (if mentioned)
 - arv: After Repair Value as integer (no $ or commas)
 - rehab_cost: Estimated repair costs as integer
 - last_offer: Last offer made to seller as integer
 - lowest_accept: Lowest price seller will accept as integer
-- options_presented: true/false - were purchase options presented?
-- option_notes: Notes about option presentation
+- options_presented: true/false - were purchase options presented to the seller?
+- option_notes: Notes about option presentation - what options were discussed
 - obstacle: What's preventing contract signing right now
+- property_walk_thru: Notes from the property walkthrough - condition, observations, etc.
+- seller_declined_offer: true/false or notes - did the seller decline the offer?
 - next_step: What happens next
 - post_appt_notes: General notes from the appointment
 - marketing_notes: Marketing-related observations
 - repair_notes: Details about property repairs needed
 - not_closeable_reason: Why did the AE leave without a signed contract? (e.g., price gap, seller needs time, competing offers, title issues, etc.) - ALWAYS populate this if no contract was signed
-- post_om_email_sent: true/false - was post-offer email sent?
 - tasks: Array of tasks to create, each with "subject" and optional "due_date" (YYYY-MM-DD)
 
 IMPORTANT:
@@ -190,24 +193,26 @@ def update_opportunity(sf, opp_id: str, data: dict) -> bool:
     update_fields = {}
 
     # Map extracted data keys to SF field API names
-    # Note: Some fields commented out due to FLS (Field Level Security) - API user can't access
     field_mapping = {
         'stage': 'StageName',
         'nurture_reason': 'Nurture_Reason__c',
-        # 'appointment_attended': 'Appointment_Attended__c',  # FLS - not accessible via API
+        'appt_status': 'Appt_Status__c',
+        'appointment_attended': 'Appointment_Attended__c',
+        'ae_in_attendance': 'AE_in_Attendance__c',
         'arv': 'ARV__c',
-        'rehab_cost': 'Estimated_Rehab_Costs__c',
+        'rehab_cost': 'Rehab_Cost__c',
         'last_offer': 'Last_Offer_Made__c',
         'lowest_accept': 'Lowest_price_seller_will_accept__c',
-        # 'options_presented': 'Options_Presented__c',  # FLS - not accessible via API
-        # 'option_notes': 'Option_Presentation_Notes__c',  # FLS - not accessible via API
-        # 'obstacle': 'Obstacle_to_Contract__c',  # FLS - not accessible via API
-        'next_step': 'NextStep',
+        'options_presented': 'Options_Presented__c',
+        'option_notes': 'Option_Presentation_Notes__c',
+        'obstacle': 'Obstacle_to_Contract__c',
+        'property_walk_thru': 'Property_Walk_Thru__c',
+        'seller_declined_offer': 'Did_Seller_Decline_Offer_Price__c',
+        'next_step': 'Next_Step__c',
         'post_appt_notes': 'Post_Appointment_Notes__c',
         'marketing_notes': 'AE_Marketing_Notes__c',
         'repair_notes': 'AE_Repair_Notes__c',
         'not_closeable_reason': 'Why_was_this_not_closable__c',
-        # 'post_om_email_sent': 'Post_OM_Email_Sent__c'  # FLS - not accessible via API
     }
 
     for key, sf_field in field_mapping.items():
