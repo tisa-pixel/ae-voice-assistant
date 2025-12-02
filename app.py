@@ -50,7 +50,7 @@ TRANSCRIPT:
 {transcript}
 
 Extract the following fields (return null if not mentioned):
-- stage: One of [Appointment Set, Warm, Hot, Nurture, Contract Signed, Closed Won, Closed Lost]
+- stage: One of [Appointment Attended, Warm, Hot, Nurture, Contract Signed, Closed Won, Closed Lost]
   * Warm = interested but not urgent, needs follow-up
   * Hot = very interested, likely to close soon
   * Nurture = long-term follow-up needed
