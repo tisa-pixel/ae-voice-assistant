@@ -52,7 +52,7 @@ TRANSCRIPT:
 Extract the following fields (return null if not mentioned):
 - stage: One of [New Lead, Contacted, Appointment Set, Attended, Offer Made, Under Contract, Nurture, Closed Won, Closed Lost]
 - nurture_reason: Only if stage is Nurture - one of [3-6 Months, 6-9 Months, 9-24 Months, Uncontacted, Cold, Property Currently List, Skiptrace Needed, SOLD, Check Back, Below Mortgage]
-- appointment_status: One of [Scheduled, Attended, No-Show, Cancelled, Rescheduled]
+- appointment_attended: true/false - did the AE attend the appointment?
 - arv: After Repair Value as integer (no $ or commas)
 - rehab_cost: Estimated repair costs as integer
 - last_offer: Last offer made to seller as integer
@@ -64,7 +64,6 @@ Extract the following fields (return null if not mentioned):
 - post_appt_notes: General notes from the appointment
 - marketing_notes: Marketing-related observations
 - repair_notes: Details about property repairs needed
-- walk_thru_notes: Property walkthrough observations
 - not_closeable_reason: If not closeable, why?
 - post_om_email_sent: true/false - was post-offer email sent?
 - tasks: Array of tasks to create, each with "subject" and optional "due_date" (YYYY-MM-DD)
@@ -142,25 +141,23 @@ def update_opportunity(sf, opp_id: str, data: dict) -> bool:
     update_fields = {}
 
     # Map extracted data keys to SF field API names
-    # Note: Some fields commented out until deployed to SF org
     field_mapping = {
         'stage': 'StageName',
         'nurture_reason': 'Nurture_Reason__c',
-        # 'appointment_status': 'Appt_Status__c',  # TODO: Deploy to SF
+        'appointment_attended': 'Appointment_Attended__c',
         'arv': 'ARV__c',
         'rehab_cost': 'Estimated_Rehab_Costs__c',
         'last_offer': 'Last_Offer_Made__c',
         'lowest_accept': 'Lowest_price_seller_will_accept__c',
-        # 'options_presented': 'Options_Presented__c',  # TODO: Deploy to SF
-        # 'option_notes': 'Option_Presentation_Notes__c',  # TODO: Deploy to SF
-        # 'obstacle': 'Obstacle_to_Contract__c',  # TODO: Deploy to SF
+        'options_presented': 'Options_Presented__c',
+        'option_notes': 'Option_Presentation_Notes__c',
+        'obstacle': 'Obstacle_to_Contract__c',
         'next_step': 'NextStep',
         'post_appt_notes': 'Post_Appointment_Notes__c',
         'marketing_notes': 'AE_Marketing_Notes__c',
         'repair_notes': 'AE_Repair_Notes__c',
-        # 'walk_thru_notes': 'Property_Walk_Thru__c',  # TODO: Deploy to SF
         'not_closeable_reason': 'Why_was_this_not_closable__c',
-        # 'post_om_email_sent': 'Post_OM_Email_Sent__c'  # TODO: Deploy to SF
+        'post_om_email_sent': 'Post_OM_Email_Sent__c'
     }
 
     for key, sf_field in field_mapping.items():
