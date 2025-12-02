@@ -5,6 +5,4 @@
     <type>LongTextArea</type>
     <length>32768</length>
     <visibleLines>5</visibleLines>
-    <trackFeedHistory>false</trackFeedHistory>
-    <trackHistory>true</trackHistory>
 </CustomField>

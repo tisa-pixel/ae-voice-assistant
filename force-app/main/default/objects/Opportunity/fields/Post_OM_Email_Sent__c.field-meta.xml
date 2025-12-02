@@ -4,6 +4,4 @@
     <label>Post OM Email Sent</label>
     <type>Checkbox</type>
     <defaultValue>false</defaultValue>
-    <trackFeedHistory>false</trackFeedHistory>
-    <trackHistory>true</trackHistory>
 </CustomField>

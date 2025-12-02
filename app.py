@@ -139,7 +139,7 @@ def update_opportunity(sf, opp_id: str, data: dict) -> bool:
     field_mapping = {
         'stage': 'StageName',
         'nurture_reason': 'Nurture_Reason__c',
-        'appointment_status': 'Appointment_Status__c',
+        'appointment_status': 'Appt_Status__c',
         'arv': 'ARV__c',
         'rehab_cost': 'Estimated_Rehab_Costs__c',
         'last_offer': 'Last_Offer_Made__c',
