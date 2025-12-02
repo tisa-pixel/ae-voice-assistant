@@ -273,7 +273,6 @@ def log_call_activity(sf, opp_id: str, owner_id: str, call_data: dict, transcrip
         'ActivityDate': datetime.now().strftime('%Y-%m-%d'),
         'Status': 'Completed',
         'Priority': 'Normal',
-        'Type': 'Call',
         'Description': description,
         'CallDurationInSeconds': int(call_duration) if call_duration else None
     }
