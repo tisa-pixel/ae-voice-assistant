@@ -2,9 +2,9 @@
 <StandardValueSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <sorted>false</sorted>
     <standardValue>
-        <fullName>Appointment Attended</fullName>
+        <fullName>Appointment Set</fullName>
         <default>false</default>
-        <label>Appointment Attended</label>
+        <label>Appointment Set</label>
         <closed>false</closed>
         <forecastCategory>Pipeline</forecastCategory>
         <probability>10</probability>
