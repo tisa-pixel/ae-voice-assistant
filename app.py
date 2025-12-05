@@ -80,6 +80,9 @@ Extract the following fields (return null if not mentioned):
 - repair_notes: Details about property repairs needed
 - not_closeable_reason: Why did the AE leave without a signed contract? (e.g., price gap, seller needs time, competing offers, title issues, etc.) - ALWAYS populate this if no contract was signed
 - tasks: Array of tasks to create, each with "subject" and optional "due_date" (YYYY-MM-DD)
+- events: Array of calendar events to create (e.g., follow-up appointments, meetings with seller). Each event needs:
+  * "datetime": ISO format datetime (e.g., "2024-12-06T14:00:00") - MUST include specific time
+  * "location": Optional - only if AE specifies a different location than the property
 
 IMPORTANT:
 - Convert dollar amounts to integers (e.g., "320k" = 320000, "$195,000" = 195000)
@@ -247,6 +250,102 @@ def create_task(sf, opp_id: str, owner_id: str, subject: str, due_date: str = No
     result = sf.Task.create(task_data)
     return result['id']
 
+def get_opportunity_details(sf, opp_id: str) -> dict:
+    """Get Opportunity details for event creation"""
+    query = f"""SELECT Id, Name, Account.Name, Account.Phone, Account.PersonMobilePhone,
+                Property_Address__c, Property_City__c, Property_State__c, Property_Zip__c
+                FROM Opportunity WHERE Id = '{opp_id}'"""
+    try:
+        results = sf.query(query)
+        if results['totalSize'] >= 1:
+            return results['records'][0]
+    except:
+        # Fallback query without Account fields if they don't exist
+        query = f"SELECT Id, Name FROM Opportunity WHERE Id = '{opp_id}'"
+        results = sf.query(query)
+        if results['totalSize'] >= 1:
+            return results['records'][0]
+    return None
+
+def create_event(sf, opp_id: str, owner_id: str, event_datetime: str, location: str = None, sf_instance_url: str = None) -> str:
+    """Create an Event (calendar item) linked to an Opportunity
+
+    Args:
+        sf: Salesforce connection
+        opp_id: Opportunity ID
+        owner_id: User ID for event owner
+        event_datetime: ISO format datetime string (e.g., '2024-12-06T14:00:00')
+        location: Optional location override (defaults to property address)
+        sf_instance_url: SF instance URL for building record links
+    """
+    # Get opportunity details for event info
+    opp = get_opportunity_details(sf, opp_id)
+    if not opp:
+        logger.error(f"Could not find opportunity {opp_id} for event creation")
+        return None
+
+    # Extract seller name from Opportunity Name or Account
+    # Opportunity Name format is usually "Address - City" so use Account if available
+    seller_name = "Seller"
+    if opp.get('Account') and opp['Account'].get('Name'):
+        seller_name = opp['Account']['Name']
+
+    # Build subject
+    subject = f"Options Appointment | {seller_name}"
+
+    # Build location from property address if not provided
+    if not location:
+        addr_parts = []
+        if opp.get('Property_Address__c'):
+            addr_parts.append(opp['Property_Address__c'])
+        if opp.get('Property_City__c'):
+            addr_parts.append(opp['Property_City__c'])
+        if opp.get('Property_State__c'):
+            addr_parts.append(opp['Property_State__c'])
+        if opp.get('Property_Zip__c'):
+            addr_parts.append(opp['Property_Zip__c'])
+        if addr_parts:
+            location = ', '.join(addr_parts)
+        else:
+            # Fall back to Opportunity Name (usually contains address)
+            location = opp.get('Name', '')
+
+    # Build description with SF link and seller phone
+    description_parts = []
+
+    # Add SF record link
+    if sf_instance_url:
+        record_url = f"{sf_instance_url}/lightning/r/Opportunity/{opp_id}/view"
+        description_parts.append(f"Salesforce Record: {record_url}")
+
+    # Add seller mobile number
+    seller_phone = None
+    if opp.get('Account'):
+        seller_phone = opp['Account'].get('PersonMobilePhone') or opp['Account'].get('Phone')
+    if seller_phone:
+        description_parts.append(f"Seller Mobile: {seller_phone}")
+
+    description = '\n'.join(description_parts)
+
+    # Parse datetime and calculate end time (60 minutes)
+    # event_datetime should be ISO format: '2024-12-06T14:00:00'
+    start_dt = datetime.fromisoformat(event_datetime.replace('Z', ''))
+    end_dt = start_dt + timedelta(minutes=60)
+
+    event_data = {
+        'Subject': subject,
+        'WhatId': opp_id,
+        'OwnerId': owner_id,
+        'StartDateTime': start_dt.isoformat(),
+        'EndDateTime': end_dt.isoformat(),
+        'Location': location,
+        'Description': description
+    }
+
+    result = sf.Event.create(event_data)
+    logger.info(f"Created event {result['id']} for {subject}")
+    return result['id']
+
 def log_call_activity(sf, opp_id: str, owner_id: str, call_data: dict, transcript: str) -> str:
     """Log the Poppy debrief call as a completed Task activity"""
     call_id = call_data.get('call_id', 'unknown')
@@ -408,13 +507,32 @@ def handle_call_ended(data: dict):
                 tasks_created.append(task_id)
             logger.info(f"Created {len(tasks_created)} follow-up tasks")
 
+        # Create any calendar events from extracted data
+        events_created = []
+        if extracted.get('events') and owner_id:
+            sf_instance_url = os.environ.get('SF_INSTANCE_URL', 'https://orgfarm-848e4d60cd-dev-ed.develop.lightning.force.com')
+            for event in extracted['events']:
+                if event.get('datetime'):
+                    event_id = create_event(
+                        sf,
+                        opp['Id'],
+                        owner_id,
+                        event['datetime'],
+                        event.get('location'),
+                        sf_instance_url
+                    )
+                    if event_id:
+                        events_created.append(event_id)
+            logger.info(f"Created {len(events_created)} calendar events")
+
         return jsonify({
             'status': 'success',
             'opportunity_id': opp['Id'],
             'opportunity_name': opp['Name'],
             'fields_updated': list(extracted.keys()) if extracted else [],
             'call_activity_id': call_activity_id,
-            'tasks_created': tasks_created
+            'tasks_created': tasks_created,
+            'events_created': events_created
         })
 
     except Exception as e:
