@@ -74,7 +74,7 @@ Extract the following fields (return null if not mentioned):
 - obstacle: What's preventing contract signing right now
 - property_walk_thru: Notes from the property walkthrough - condition, observations, etc.
 - seller_declined_offer: One of [Yes, No, Counter Offered, Considering, No Response] - did the seller decline the offer price?
-- next_step: What happens next
+- next_step: What happens next - ALWAYS use actual dates (e.g., "Meet on 12/6/2025 with seller for options presentation"). NEVER use relative terms like "tomorrow", "today", "next week", "Wednesday" - convert to actual MM/DD/YYYY format
 - post_appt_notes: General notes from the appointment
 - marketing_notes: Marketing-related observations
 - repair_notes: Details about property repairs needed
@@ -89,6 +89,8 @@ IMPORTANT:
 - For stage: ONLY extract if the AE explicitly states the stage (e.g., "this is a hot lead", "put them in nurture", "mark it warm"). Do NOT guess or infer the stage - return null if not explicitly mentioned.
 - Extract emotional/motivation details into appropriate notes fields
 - If no contract was signed at the appointment, ALWAYS extract not_closeable_reason - what prevented the close?
+- next_step is REQUIRED - always extract what happens next
+- Convert ALL relative dates to actual dates. Today is {datetime.now().strftime('%m/%d/%Y')}. "Tomorrow" = {(datetime.now() + timedelta(days=1)).strftime('%m/%d/%Y')}, etc.
 
 Return valid JSON only, no markdown formatting.
 """
