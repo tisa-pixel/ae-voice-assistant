@@ -54,12 +54,13 @@ TRANSCRIPT:
 {transcript}
 
 Extract the following fields (return null if not mentioned):
-- stage: One of [Appointment Set, Warm, Nurture, Contract Signed, Closed Won, Closed Lost]
+- stage: One of [Appointment Set, Warm, Hot, Nurture, Contract Signed, Closed Won, Closed Lost]
   * Appointment Set = appointment scheduled but not yet attended
   * Warm = interested, needs follow-up
+  * Hot = very interested, likely to close soon
   * Nurture = long-term follow-up needed
   * Contract Signed = got the contract signed
-  * DO NOT use "Appointment Attended" or "Hot" - these are NOT valid stages
+  * DO NOT use "Appointment Attended" - this is NOT a valid stage
 - nurture_reason: Only if stage is Nurture - one of [3-6 Months, 6-9 Months, 9-24 Months, Uncontacted, Cold, Property Currently List, Skiptrace Needed, SOLD, Check Back, Below Mortgage]
 - appt_status: One of [Scheduled, Attended, No-Show, Cancelled, Rescheduled] - status of the appointment
 - appointment_attended: true/false - did the AE attend the appointment? (usually true for debrief calls)
