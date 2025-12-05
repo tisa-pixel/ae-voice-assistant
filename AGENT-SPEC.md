@@ -5,7 +5,8 @@
 Voice AI agent (via Retell) that enables Account Executives / Acquisition Agents to:
 1. **Post-Appointment Debrief** - Natural conversation that updates Salesforce with comprehension, not just transcription
 2. **Task Creation** - "Remind me to..." creates SF Tasks linked to the correct Opportunity
-3. **Quick Updates** - Direct field updates without full debrief
+3. **Event Creation** - Schedule follow-up appointments on calendar
+4. **Quick Updates** - Direct field updates without full debrief
 
 ## Technology Stack
 
@@ -16,92 +17,161 @@ Voice AI agent (via Retell) that enables Account Executives / Acquisition Agents
 
 ---
 
-## Conversation Flow (Hybrid)
+## Retell Configuration
+
+### Agent Settings
+| Setting | Value |
+|---------|-------|
+| Agent ID | agent_3af4c76b64ec3dba9fdee14d64 |
+| LLM ID | llm_4d999db05df3e16dfbf8709bbe5d |
+| Model | gpt-4o |
+| Model High Priority | true |
+| Voice | 11labs-Cleo |
+| Voice Speed | 1 |
+| Voice Temperature | 1.02 |
+| Volume | 1.2 |
+| Responsiveness | 0.75 |
+| Interruption Sensitivity | 0.6 |
+| Enable Backchannel | true |
+| Backchannel Frequency | 0.3 |
+| Backchannel Words | ['yeah', 'got it', 'okay', 'mm-hmm'] |
+| Ambient Sound | call-center |
+| Ambient Sound Volume | 0.2 |
+| Reminder Trigger (ms) | 10000 |
+| Reminder Max Count | 2 |
+
+### Webhook
+- URL: https://poppy-ae-assistant-f961c226aec0.herokuapp.com/webhook/retell
+
+---
+
+## Conversation Flow
 
 ### Opening
 ```
-AGENT: "Hey, what property are we updating?"
+AGENT: "Hey, how'd it go?"
 ```
+
+### Get the Address
+- If AE doesn't provide street address, ask: "What's the address?"
+- Don't proceed without an actual street address
 
 ### Natural Debrief
 AE talks freely about the appointment. Agent listens and extracts structured data.
 
-### Confirmation
-Agent reads back all extracted fields before saving:
-```
-AGENT: "Let me confirm what I'm updating:
-- Stage: [value]
-- ARV: [value]
-- [etc...]
+Keep questions short. ONE at a time:
+- "ARV?"
+- "Rehab?"
+- "Did you make an offer?"
+- "What's the lowest they'll take?"
+- "Why wasn't this closeable?"
+- "Hot, warm, or nurture?"
+- "Walk me through the layout inside" (beds, baths, flow) - BE PATIENT, let them finish
+- "Anything notable for marketing?"
+- "Any major repair issues?"
 
-Anything I missed or got wrong?"
+### Follow Up on Meetings
+- If AE mentions a follow-up meeting, ask "What time?" if not given
+- Confirm: "Got it, I'll add that to your calendar"
+- That meeting IS the next step - don't ask "what's the next step" again
+
+### Confirmation - Rapid Fire
+No dollar signs. Quick summary:
+```
+AGENT: "Got it. [address], ARV 600k, rehab 80k, lowest 400k, stage hot. [layout]. [marketing]. Sound right?"
 ```
 
-### Reminders (End of Every Debrief)
+### Reminders
 ```
-AGENT: "Quick reminders:
-- Upload photos and video
-- Upload appointment recording
-
-Anything else?"
+AGENT: "Don't forget to upload your photos and recording from today."
 ```
 
-### Task Creation
+### Sign-Off
 ```
-AE: "Create a task to send a follow-up email"
-AGENT: "Created task: 'Send follow-up email' for [address], due [next business day]. All set?"
+AGENT: "You're all set. Talk soon."
 ```
+
+---
+
+## Critical Rules
+
+### Numbers - No Dollar Signs
+- NEVER say "dollar" or use $
+- Say "600k" not "$600K"
+- Just the number with "k" for thousands
+
+### Property Walkthrough - Let Them Talk
+- When asking about layout, the AE will give a LONG answer
+- DO NOT interrupt - wait for them to fully finish
+- Don't say "Got it" or "Thanks" mid-description
+- Only respond when they're clearly done
+
+### Gender - Never Assume
+- Use "they/them" for sellers unless the AE specifies
+
+### Options = Offer
+- "Options" and "Offer" are the SAME thing - don't ask separately
 
 ---
 
 ## Salesforce Field Mapping
 
-### Opportunity Fields - MANDATORY (Agent must ask if not mentioned)
+### Opportunity Fields
 
-| Field | SF API Name | Type | Notes |
-|-------|-------------|------|-------|
-| Stage | `StageName` | Picklist | New Lead → Contacted → Appointment Set → Attended → Offer Made → Under Contract → Nurture → Closed Won/Lost |
-| Nurture Reason | `Nurture_Reason__c` | Picklist | Only required if Stage = Nurture |
-| Next Step | `NextStep` | Text | |
-| ARV (Post Appt) | `ARV__c` | Currency | |
-| Rehab Cost | `Estimated_Rehab_Costs__c` | Currency | |
-| Lowest Offer Seller will accept | `Lowest_price_seller_will_accept__c` | Currency | |
-| Last Offer Made | `Last_Offer_Made__c` | Currency | |
-| Were Options Presented? | `Options_Presented__c` | Checkbox | **NEW FIELD** |
-| Option Presentation Notes | `Option_Presentation_Notes__c` | Long Textarea | **NEW FIELD** |
-| Obstacle to Contract Signed | `Obstacle_to_Contract__c` | Long Textarea | **NEW FIELD** |
-| Post OM Email Sent | `Post_OM_Email_Sent__c` | Checkbox | **NEW FIELD** |
-| AE Marketing Notes | `AE_Marketing_Notes__c` | Textarea | |
-| AE Repair Notes | `AE_Repair_Notes__c` | Textarea | |
-| Why was this not closeable? | `Why_was_this_not_closable__c` | Text | |
-| Property Walk Thru | `Property_Walk_Thru__c` | Long Textarea | **NEW FIELD** |
-| Appointment Status | `Appointment_Status__c` | Picklist | Scheduled, Attended, No-Show, Cancelled, Rescheduled **NEW FIELD** |
-| Post Appt Notes | `Post_Appointment_Notes__c` | Textarea | |
+| Field | SF API Name | Type |
+|-------|-------------|------|
+| Stage | `StageName` | Picklist |
+| Nurture Reason | `Nurture_Reason__c` | Picklist |
+| Next Step | `NextStep` | Text |
+| ARV | `ARV__c` | Currency |
+| Rehab Cost | `Rehab_Cost__c` | Currency |
+| Lowest Seller Will Accept | `Lowest_price_seller_will_accept__c` | Currency |
+| Last Offer Made | `Last_Offer_Made__c` | Currency |
+| Options Presented | `Options_Presented__c` | Checkbox |
+| Option Presentation Notes | `Option_Presentation_Notes__c` | Long Textarea |
+| Obstacle to Contract | `Obstacle_to_Contract__c` | Long Textarea |
+| AE Marketing Notes | `AE_Marketing_Notes__c` | Textarea |
+| AE Repair Notes | `AE_Repair_Notes__c` | Textarea |
+| Why Not Closeable | `Why_was_this_not_closable__c` | Text |
+| Property Walk Thru | `Property_Walk_Thru__c` | Long Textarea |
+| Appointment Status | `Appt_Status__c` | Picklist |
+| Post Appointment Notes | `Post_Appointment_Notes__c` | Textarea |
+| Did Seller Decline Offer | `Did_Seller_Decline_Offer_Price__c` | Picklist |
 
-### Stage Values (Updated)
+### Stage Values
 
 | Stage | Description |
 |-------|-------------|
-| New Lead | Fresh lead, not yet contacted |
-| Contacted | Initial contact made |
-| Appointment Set | Appointment scheduled |
-| Attended | Appointment completed |
-| Offer Made | Offer presented to seller |
-| Under Contract | Signed contract |
+| Appointment Set | Appointment scheduled but not yet attended |
+| Warm | Interested, needs follow-up |
+| Hot | Very interested, likely to close soon |
 | Nurture | Long-term follow-up (requires Nurture Reason) |
+| Contract Signed | Got the contract signed |
 | Closed Won | Deal closed successfully |
 | Closed Lost | Deal lost |
 
 ### Task Fields
 
-| Field | SF API Name | Type | Default |
-|-------|-------------|------|---------|
-| Subject | `Subject` | Text | From AE request |
-| Due Date | `ActivityDate` | Date | Next business day |
-| Related To | `WhatId` | Reference | Opportunity ID |
-| Assigned To | `OwnerId` | Reference | Calling AE |
-| Status | `Status` | Picklist | Not Started |
-| Priority | `Priority` | Picklist | Normal |
+| Field | SF API Name | Default |
+|-------|-------------|---------|
+| Subject | `Subject` | From AE request |
+| Due Date | `ActivityDate` | Next business day |
+| Related To | `WhatId` | Opportunity ID |
+| Assigned To | `OwnerId` | Calling AE |
+| Status | `Status` | Not Started |
+| Priority | `Priority` | Normal |
+
+### Event Fields
+
+| Field | SF API Name | Notes |
+|-------|-------------|-------|
+| Subject | `Subject` | "Options Appointment \| {Seller Name}" |
+| Start DateTime | `StartDateTime` | ISO format |
+| End DateTime | `EndDateTime` | Start + 60 minutes |
+| Location | `Location` | Property address (unless specified) |
+| Related To | `WhatId` | Opportunity ID |
+| Assigned To | `OwnerId` | Calling AE |
+| Description | `Description` | SF record link + seller mobile |
 
 ---
 
@@ -119,35 +189,28 @@ The agent must INTERPRET, not just transcribe. Examples:
 ### Example 2: Property Condition
 **AE says**: "Roof's shot and the kitchen is trashed, probably 40k in work"
 **Agent extracts**:
-- Estimated Rehab Costs: $40,000
+- Rehab Cost: 40000
 - AE Repair Notes: "Roof replacement needed, kitchen damaged"
 
 ### Example 3: Negotiation Status
 **AE says**: "Offered 195, she wants 220, told her I'd check with my partner"
 **Agent extracts**:
-- Last Offer Made: $195,000
-- Lowest price seller will accept: $220,000
-- Stage: Offer Made (or Negotiation if already past that)
+- Last Offer Made: 195000
+- Lowest price seller will accept: 220000
 - Next Step: "Follow up after checking with partner"
-
-### Example 4: Obstacles
-**AE says**: "Main thing is she's lived there 20 years, hard to let go"
-**Agent extracts**:
-- Obstacle to Contract Signed: "Emotional attachment - lived in property 20 years"
 
 ---
 
 ## Identification Logic
 
 ### AE Identification
-- Phone number → SF User lookup
-- Or prompt: "Who am I speaking with?"
+- Phone number → SF User lookup (MobilePhone or Phone field)
+- Fallback to default owner if not found
 
 ### Opportunity Identification
 - AE states address: "Just left 1847 Elm Street"
 - Agent queries SF: `SELECT Id, Name FROM Opportunity WHERE Name LIKE '%1847 Elm%'`
-- If multiple matches: "I found a few properties with that address. Did you mean [options]?"
-- If no match: "I couldn't find that address. Want me to create a task to update it manually?"
+- Address normalized for matching (St/Street, Ave/Avenue, etc.)
 
 ---
 
@@ -155,94 +218,64 @@ The agent must INTERPRET, not just transcribe. Examples:
 
 | Scenario | Response |
 |----------|----------|
-| Can't find Opportunity | "I couldn't find that address in Salesforce. Can you double-check? Or I can create a task to update it manually." |
-| Missing required field | "I didn't catch the [field]. What's the [field]?" |
-| Ambiguous data | "Just to clarify - when you said [X], did you mean [interpretation]?" |
-| SF API error | "I'm having trouble connecting to Salesforce. Want me to try again, or create a task for manual update?" |
+| Can't find Opportunity | "I couldn't find that address in Salesforce. Can you double-check?" |
+| Missing required field | Agent asks for it naturally during debrief |
+| SF API error | Logged, returns error status |
 
 ---
 
-## Reminders
+## Sample Conversation
 
-At the end of every appointment debrief (not for task-only calls):
-
-```
-AGENT: "Quick reminders:
-- Upload photos and video
-- Upload appointment recording
-
-Anything else?"
-```
-
----
-
-## Sample Conversations
-
-### Full Debrief Flow
 ```
 AE: *calls in*
 
-AGENT: "Hey, what property are we updating?"
+POPPY: "Hey, how'd it go?"
 
-AE: "Just finished at 1847 Elm Street"
+AE: "Good. I'm at 4116 West Iowa Avenue, Tampa."
 
-AGENT: "Got it, 1847 Elm. Tell me how it went."
+POPPY: "ARV?"
 
-AE: "Good meeting. Seller is motivated, going through a divorce, wants to close in 30 days. House needs work - roof and kitchen mainly, I'd say 40k. ARV around 320. I offered 195, she countered at 220. Presented all the options, she's leaning cash but wants to think about it. Main obstacle is emotional - she's lived there 20 years."
+AE: "600k"
 
-AGENT: "Got it. Here's what I'm updating:
-- Stage: Offer Made
-- ARV: $320,000
-- Estimated Rehab: $40,000
-- Last Offer Made: $195,000
-- Lowest she'll accept: $220,000
-- Options Presented: Yes
-- Obstacle: Emotional attachment - lived there 20 years
-- Next Step: Follow up - seller considering options
-- Appointment Status: Attended
+POPPY: "Rehab?"
 
-Anything I missed or got wrong?"
+AE: "80k"
 
-AE: "Add to the notes that her ex might need to sign too, could complicate things"
+POPPY: "Offer?"
 
-AGENT: "Added to post-appointment notes.
+AE: "No, I need to get a seawall quote first. Going back tomorrow at 10 to present options."
 
-Quick reminders:
-- Upload photos and video
-- Upload appointment recording
+POPPY: "Got it, I'll add that to your calendar. Want me to task you on the seawall quote?"
 
-Anything else?"
+AE: "Yeah"
 
-AE: "Yeah, task me to follow up with her Thursday"
+POPPY: "Lowest they'll take?"
 
-AGENT: "Created task: 'Follow up with seller' for 1847 Elm, due Thursday. All set?"
+AE: "400k"
 
-AE: "That's it, thanks"
+POPPY: "Why wasn't this closeable?"
 
-AGENT: "Done. Talk soon."
-```
+AE: "Needed the seawall quote before I could give proper options"
 
-### Task-Only Call
-```
-AE: *calls in*
+POPPY: "Hot, warm, or nurture?"
 
-AGENT: "Hey, what property are we updating?"
+AE: "Hot"
 
-AE: "No debrief, just need a task. Remind me to send a proposal to the seller at 555 Oak Ave"
+POPPY: "Walk me through the layout inside"
 
-AGENT: "Got it. Task: 'Send proposal to seller' for 555 Oak Ave, due tomorrow. Anything else?"
+AE: "Main floor is open - kitchen, living, dining all together. One bath off the kitchen. Upstairs is 3 beds, 3 baths. Out back there's a huge deck with a pool overlooking the bay, dock with two boat lifts."
+
+POPPY: "Anything for marketing?"
+
+AE: "Great school district and good boating water"
+
+POPPY: "Major repairs besides the seawall?"
 
 AE: "Nope"
 
-AGENT: "Done."
+POPPY: "Got it. 4116 West Iowa, ARV 600k, rehab 80k, lowest 400k, stage hot. Open main floor, 3 bed 3 bath upstairs, deck, pool, bay view, dock with 2 lifts. Seawall needs quote. Great schools, good boating. Sound right?"
+
+AE: "Yep"
+
+POPPY: "I'll task you on the seawall quote and add tomorrow's 10 AM meeting to your calendar. Don't forget photos and recording from today. You're all set, talk soon!"
 ```
-
----
-
-## Next Steps
-
-1. [ ] Deploy SF field metadata to org
-2. [ ] Build Heroku backend with SF integration
-3. [ ] Create Retell agent with this prompt/logic
-4. [ ] Test with sample calls
-5. [ ] Iterate based on real AE feedback
