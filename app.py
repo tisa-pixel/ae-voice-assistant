@@ -219,7 +219,7 @@ def update_opportunity(sf, opp_id: str, data: dict) -> bool:
         'obstacle': 'Obstacle_to_Contract__c',
         'property_walk_thru': 'Property_Walk_Thru__c',
         'seller_declined_offer': 'Did_Seller_Decline_Offer_Price__c',
-        'next_step': 'Next_Step__c',
+        'next_step': 'NextStep',  # Standard SF field, not custom Next_Step__c
         'post_appt_notes': 'Post_Appointment_Notes__c',
         'marketing_notes': 'AE_Marketing_Notes__c',
         'repair_notes': 'AE_Repair_Notes__c',
@@ -432,9 +432,15 @@ def handle_call_ended(data: dict):
     call_data = data.get('call', data)
     call_id = call_data.get('call_id', '')
     transcript = call_data.get('transcript', '')
-    caller_number = call_data.get('from_number', '')
+    from_number = call_data.get('from_number', '')
+    to_number = call_data.get('to_number', '')
 
-    logger.info(f"Processing call_ended. Call ID: {call_id}, Transcript length: {len(transcript)}, from: {caller_number}")
+    # For outbound calls (Poppy calling AE), AE's number is in to_number
+    # For inbound calls (AE calling Poppy), AE's number is in from_number
+    # Try to_number first (outbound), fall back to from_number (inbound)
+    ae_phone = to_number or from_number
+
+    logger.info(f"Processing call_ended. Call ID: {call_id}, Transcript length: {len(transcript)}, from: {from_number}, to: {to_number}, ae_phone: {ae_phone}")
     logger.info(f"Call data keys: {list(call_data.keys())}")
 
     # Check for duplicate webhook - Retell sometimes sends multiple times
@@ -460,9 +466,14 @@ def handle_call_ended(data: dict):
         logger.info("SF connection established")
 
         # Find the user (AE) by phone
-        user = find_user_by_phone(sf, caller_number)
+        user = find_user_by_phone(sf, ae_phone)
         owner_id = user['Id'] if user else None
-        logger.info(f"User lookup: {user['Name'] if user else 'Not found'}")
+        # Fallback to default owner if phone lookup fails
+        if not owner_id:
+            owner_id = os.environ.get('DEFAULT_OWNER_ID', '005gK000007u2SvQAI')  # Tisa Daniels
+            logger.info(f"User lookup for {ae_phone}: Not found, using default owner")
+        else:
+            logger.info(f"User lookup for {ae_phone}: {user['Name']}")
 
         # Extract property address using Claude (much smarter than regex)
         property_address = extract_address_from_transcript(transcript)
