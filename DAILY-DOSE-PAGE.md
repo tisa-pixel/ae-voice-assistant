@@ -1,12 +1,15 @@
-# How I Built a Voice AI That Updates Salesforce After Appointments (No More Data Entry)
-
-**Build:** Poppy - AE Voice Assistant
-**Published:** December 10, 2025
-**Category:** Salesforce Automation | Voice AI | Real Estate Tech
+# Daily Dose - Build Post: Poppy AE Voice Assistant
+**For conversionisourgame.com**
+**Created:** December 10, 2025
 
 ---
 
-## THE PROBLEM
+## 1. BUILD TITLE
+How I Built a Voice AI That Updates Salesforce After Appointments (No More Data Entry)
+
+---
+
+## 2. THE PROBLEM
 
 Acquisition agents hate manual Salesforce data entry after appointments. They're tired, mentally drained from negotiations, and the last thing they want to do is click through 15 fields in Salesforce to log what happened. So what do they do? They skip it, forget details, or write terrible notes that nobody can use later.
 
@@ -14,7 +17,7 @@ Result? Your CRM data is trash, deals fall through the cracks, and nobody has vi
 
 ---
 
-## THE SOLUTION
+## 3. THE SOLUTION
 
 Built a voice AI agent (Poppy) that calls AEs right after appointments and naturally debriefs them in conversation. She asks the right questions, listens patiently, extracts structured data from their responses, and updates Salesforce automatically—no clicking, no forms, no data entry.
 
@@ -28,7 +31,7 @@ Built a voice AI agent (Poppy) that calls AEs right after appointments and natur
 
 ---
 
-## WATCH ME BUILD IT
+## 4. WATCH ME BUILD IT
 
 [YouTube embed placeholder - record the walkthrough video]
 
@@ -41,7 +44,7 @@ Built a voice AI agent (Poppy) that calls AEs right after appointments and natur
 
 ---
 
-## WHAT YOU'LL LEARN
+## 5. WHAT YOU'LL LEARN
 
 - How to build a conversational AI agent with Retell AI
 - How to design prompts for comprehension (not just transcription)
@@ -53,9 +56,9 @@ Built a voice AI agent (Poppy) that calls AEs right after appointments and natur
 
 ---
 
-## BUILD DETAILS
+## 6. BUILD DETAILS
 
-### Time Investment
+### 6.1 Time Investment
 
 | Who | Time Required |
 |-----|---------------|
@@ -68,7 +71,7 @@ Built a voice AI agent (Poppy) that calls AEs right after appointments and natur
 - Backend Flask app development: 5-8 hours
 - Testing & refinement: 2-3 hours
 
-### Cost Breakdown
+### 6.2 Cost Breakdown
 
 | Approach | Cost |
 |----------|------|
@@ -87,7 +90,7 @@ Built a voice AI agent (Poppy) that calls AEs right after appointments and natur
 
 ---
 
-## TECH STACK
+## 7. TECH STACK
 
 🔧 **Tools Used:**
 
@@ -102,284 +105,108 @@ Built a voice AI agent (Poppy) that calls AEs right after appointments and natur
 
 ---
 
-## STEP-BY-STEP BREAKDOWN
+## 8. STEP-BY-STEP BREAKDOWN
 
-### Step 1: Set Up Retell AI Agent
+### 1. **Set Up Retell AI Agent**
 
-**What you'll do:**
-- Create Retell AI account
-- Configure agent settings (voice, speed, responsiveness)
-- Write the agent prompt (see POPPY-VOICE.md in repo)
-- Set up webhook URL (we'll create this in Step 3)
+Create a Retell AI account and configure your agent's voice and behavior settings. The key decisions here are voice selection (we use 11labs-Cleo for warmth), responsiveness level, and interruption sensitivity.
 
-**Key settings:**
-- Voice: 11labs-Cleo (warm, conversational)
-- Responsiveness: 0.75 (gives AEs time to think)
-- Interruption Sensitivity: 0.6 (lets them talk without cutting off)
-- Backchannel: Enabled (natural "mm-hmm", "yeah" responses)
-
-**Screenshot:** [Retell agent configuration panel]
+Setting responsiveness to 0.75 gives AEs time to think without feeling rushed. Interruption sensitivity at 0.6 lets them finish their thoughts. Enable backchannel for natural "mm-hmm" and "yeah" responses that make the conversation feel human.
 
 ---
 
-### Step 2: Map Salesforce Fields
+### 2. **Map Salesforce Fields**
 
-**What you'll do:**
-- Identify which Opportunity fields need updating
-- Document API names for each field
-- Set up Salesforce Connected App for API access
-- Get security token for authentication
+Document which Opportunity fields Poppy will update and their API names. You'll need to set up a Salesforce Connected App to enable API access from external applications.
 
-**Fields updated by Poppy:**
-- Stage (Hot, Warm, Nurture)
-- ARV, Rehab Cost, Lowest Seller Will Accept
-- Last Offer Made, Options Presented
-- Property Walk Thru (layout description)
-- AE Marketing Notes, AE Repair Notes
-- Next Step, Post Appointment Notes
-- Appointment Status
-
-**Screenshot:** [Salesforce field setup]
-
-**API Authentication:**
-```bash
-SF_USERNAME=your-username@salesforce.com
-SF_PASSWORD=your-password
-SF_SECURITY_TOKEN=your-token
-SF_DOMAIN=login  # or test for sandbox
-```
+Poppy updates fields like Stage, ARV, Rehab Cost, Lowest Seller Will Accept, Last Offer Made, Property Walk Thru description, AE Notes, Next Step, and Appointment Status. Create a spreadsheet mapping conversation topics to field API names for your backend to reference.
 
 ---
 
-### Step 3: Build the Flask Backend
+### 3. **Build the Flask Backend**
 
-**What you'll do:**
-- Create Python Flask app
-- Set up webhook endpoint for Retell
-- Implement Salesforce connection
-- Add data extraction logic (using Claude API)
-- Handle tasks and events creation
+Create a Python Flask application with a webhook endpoint that Retell will call after each conversation ends. The backend receives the call transcript, authenticates to Salesforce, extracts structured data, and updates the appropriate Opportunity.
 
-**Core files:**
-- `app.py` - Main Flask application
-- `requirements.txt` - Python dependencies
-- `Procfile` - Heroku deployment config
-- `runtime.txt` - Python version
-
-**Key functions:**
-1. **Webhook handler** - Receives call data from Retell
-2. **SF connection** - Authenticates and connects to Salesforce
-3. **Data extraction** - Uses Claude API to interpret transcript
-4. **Opportunity update** - Updates SF fields
-5. **Task/Event creation** - Creates follow-ups
-
-**Screenshot:** [Code snippet of webhook handler]
+The app needs five core functions: webhook handler to receive Retell data, Salesforce connection for authentication, data extraction using Claude API to interpret natural language, Opportunity update to write to SF, and Task/Event creation for follow-ups. See the GitHub repo for the complete implementation.
 
 ---
 
-### Step 4: Deploy to Heroku
+### 4. **Deploy to Heroku**
 
-**What you'll do:**
-- Create Heroku app
-- Set environment variables (SF credentials, Retell API key, Claude API key)
-- Deploy Flask app
-- Get webhook URL
-- Add webhook URL to Retell agent config
+Create a Heroku app and configure environment variables for all your credentials - Salesforce username, password, security token, Retell API key, and Claude API key. Push your Flask app to Heroku using Git.
 
-**Deployment commands:**
-```bash
-heroku create poppy-ae-assistant
-heroku config:set SF_USERNAME=your-username
-heroku config:set SF_PASSWORD=your-password
-heroku config:set SF_SECURITY_TOKEN=your-token
-heroku config:set RETELL_API_KEY=your-retell-key
-heroku config:set ANTHROPIC_API_KEY=your-claude-key
-git push heroku main
-```
-
-**Screenshot:** [Heroku dashboard with environment variables]
+Once deployed, your app gets a public URL that Retell can call. The Procfile tells Heroku how to run your Flask app, and requirements.txt ensures all Python dependencies are installed automatically.
 
 ---
 
-### Step 5: Configure Retell Webhook
+### 5. **Configure Retell Webhook**
 
-**What you'll do:**
-- Copy Heroku app URL
-- Add `/webhook/retell` endpoint to Retell agent
-- Test webhook connection
-- Review logs to ensure data is flowing
+In the Retell dashboard, add your Heroku app URL with the webhook endpoint path. When calls end, Retell sends the transcript and metadata to this URL, triggering your Salesforce updates.
 
-**Webhook URL format:**
-```
-https://poppy-ae-assistant.herokuapp.com/webhook/retell
-```
-
-**Screenshot:** [Retell webhook configuration]
+Test the webhook connection by making a test call and checking your Heroku logs. You should see the incoming request and Salesforce update confirmation. Fix any authentication or field mapping issues before going live.
 
 ---
 
-### Step 6: Write the Agent Prompt
+### 6. **Write the Agent Prompt**
 
-**What you'll do:**
-- Define Poppy's personality (warm, empathetic, efficient)
-- Write conversation flow (opening → questions → confirmation → sign-off)
-- Add critical rules (no dollar signs, let them talk during property walkthrough)
-- Include Salesforce field mapping instructions
+Define Poppy's personality (warm, empathetic, efficient) and conversation flow. The prompt is the heart of the system - it determines how natural and effective the calls feel.
 
-**Key prompt sections:**
-1. **Personality & Voice** - How Poppy should sound
-2. **Conversation Flow** - What to ask and when
-3. **Critical Rules** - Don't mess these up
-4. **Field Mapping** - How to extract data for SF
-5. **Error Handling** - What to do if things go wrong
-
-**Full prompt:** See `POPPY-VOICE.md` in GitHub repo
-
-**Screenshot:** [Prompt configuration in Retell]
+Structure the prompt with personality guidelines, conversation flow (opening → questions → confirmation → sign-off), critical rules (no dollar signs, let them talk during property descriptions), and field mapping instructions. The full prompt is in POPPY-VOICE.md in the repo.
 
 ---
 
-### Step 7: Test & Refine
+### 7. **Test & Refine**
 
-**What you'll do:**
-- Make test calls with various scenarios
-- Check Salesforce to verify updates
-- Review transcripts for accuracy
-- Adjust prompt based on edge cases
-- Optimize responsiveness and interruption handling
+Make test calls covering various scenarios: standard appointments, no-offer situations, tough negotiations, complex property descriptions, and multiple follow-up needs. Check Salesforce after each call to verify the right data landed in the right fields.
 
-**Test scenarios:**
-- Standard appointment (offer made)
-- No offer (follow-up scheduled)
-- Tough appointment (seller unreasonable)
-- Complex property description (let agent talk)
-- Multiple follow-ups needed
-
-**Screenshot:** [Salesforce showing updated Opportunity]
+Review transcripts for extraction accuracy and adjust your prompts based on edge cases. Fine-tune responsiveness and interruption settings based on real conversation flow. Plan for 2-3 hours of refinement before going live.
 
 ---
 
-## GITHUB REPO
+## 9. GITHUB REPO
 
 📂 **Get the Code:**
 
 **Repository:** [github.com/tisa-pixel/ae-voice-assistant](https://github.com/tisa-pixel/ae-voice-assistant)
 
 **What's included:**
-- ✅ Full Flask application (`app.py`)
-- ✅ Agent specification (`AGENT-SPEC.md`)
-- ✅ Poppy personality & voice guide (`POPPY-VOICE.md`)
-- ✅ Salesforce field mapping
-- ✅ Requirements & deployment files
-- ✅ Sample conversation flows
-- ✅ Heroku deployment instructions
-
-**Quick start:**
-```bash
-git clone https://github.com/tisa-pixel/ae-voice-assistant.git
-cd ae-voice-assistant
-pip install -r requirements.txt
-# Set environment variables
-python app.py  # Test locally
-```
+- Full Flask application (app.py)
+- Agent specification (AGENT-SPEC.md)
+- Poppy personality & voice guide (POPPY-VOICE.md)
+- Salesforce field mapping
+- Requirements & deployment files
+- Sample conversation flows
+- Heroku deployment instructions
 
 ---
 
-## DOWNLOAD THE TEMPLATE
+## 10. DOWNLOAD THE TEMPLATE
 
 ⬇️ **Download Resources:**
 
-- [📄 Retell Agent Prompt Template](https://github.com/tisa-pixel/ae-voice-assistant/blob/main/POPPY-VOICE.md)
-- [📋 Salesforce Field Mapping Checklist](https://github.com/tisa-pixel/ae-voice-assistant/blob/main/AGENT-SPEC.md)
-- [🐍 Python Flask Webhook Template](https://github.com/tisa-pixel/ae-voice-assistant/blob/main/app.py)
-- [☁️ Heroku Deployment Guide](https://github.com/tisa-pixel/ae-voice-assistant)
+- [Retell Agent Prompt Template](https://github.com/tisa-pixel/ae-voice-assistant/blob/main/POPPY-VOICE.md)
+- [Salesforce Field Mapping Checklist](https://github.com/tisa-pixel/ae-voice-assistant/blob/main/AGENT-SPEC.md)
+- [Python Flask Webhook Template](https://github.com/tisa-pixel/ae-voice-assistant/blob/main/app.py)
+- [Heroku Deployment Guide](https://github.com/tisa-pixel/ae-voice-assistant)
 
 **Setup checklist:**
-- [ ] Retell AI account created
-- [ ] Salesforce Connected App configured
-- [ ] Flask app deployed to Heroku
-- [ ] Webhook URL added to Retell
-- [ ] Test call completed successfully
-- [ ] Salesforce updates verified
-- [ ] Agent prompt refined based on testing
+1. Retell AI account created
+2. Salesforce Connected App configured
+3. Flask app deployed to Heroku
+4. Webhook URL added to Retell
+5. Test call completed successfully
+6. Salesforce updates verified
+7. Agent prompt refined based on testing
 
 ---
 
-## KEY INSIGHTS & LEARNINGS
-
-### What Worked Really Well:
-
-**1. Prompt Engineering for Comprehension**
-- Don't just transcribe—INTERPRET
-- "She's going through a divorce" → Extract urgency, timeline, motivation
-- "Roof's shot, kitchen trashed" → Extract rehab cost, repair notes
-
-**2. Natural Conversation Design**
-- Short questions: "ARV?" not "Can you tell me what the ARV is?"
-- Let them talk: During property walkthrough, WAIT—don't interrupt
-- Empathy matters: "That's a tough one" when appointments go badly
-
-**3. No Dollar Signs Rule**
-- Say "600k" not "$600,000"
-- Sounds more natural, less robotic
-- Tested this exhaustively—makes a huge difference
-
-**4. Rapid-Fire Confirmation**
-- Read back ALL key details quickly at the end
-- Gives AE a chance to catch mistakes
-- Builds trust that data is accurate
-
-### What Didn't Work:
-
-**1. Over-Acknowledging**
-- Saying "Got it" before every response = annoying
-- Mix it up, sometimes just ask the next question
-
-**2. Asking "What's Next Step?" When They Already Told You**
-- If they said "Going back tomorrow at 10," that IS the next step
-- Don't ask redundant questions
-
-**3. Assuming Gender**
-- Always use "they/them" unless AE specifies
-- Prevents awkward corrections mid-call
-
-### Edge Cases Handled:
-
-- **Can't find address in SF** → Ask them to double-check
-- **AE needs to leave mid-call** → Save partial data, allow resume later
-- **Multiple properties in one call** → Not supported yet (future feature)
-- **No-show appointments** → Update status, offer to create follow-up task
-
----
-
-## REAL RESULTS
-
-**Before Poppy:**
-- AEs skipped SF updates ~40% of the time
-- Average data entry time: 8-12 minutes per appointment
-- Incomplete notes, missing details
-- Managers had no visibility
-
-**After Poppy:**
-- 100% of appointments logged (AEs actually use it)
-- Average call time: 2-3 minutes
-- Rich, structured data every time
-- Real-time visibility for managers
-
-**Time savings:**
-- 5 AEs × 3 appointments/day × 10 minutes saved = **2.5 hours saved per day**
-- **50 hours saved per month** at ~$250/month cost = **$2,000+ value**
-
----
-
-## QUESTIONS? DROP THEM BELOW
+## 11. QUESTIONS? DROP THEM BELOW
 
 💬 **Have questions or want to share your results?**
 
-- **Watch the full video:** [YouTube link]
-- **Comment on YouTube:** [Link to video comments]
-- **DM me on Instagram:** [@donottakeifallergictorevenue](https://www.instagram.com/donottakeifallergictorevenue/)
-- **Connect on LinkedIn:** [linkedin.com/in/tisadaniels](https://linkedin.com/in/tisadaniels)
+- Comment on the [YouTube video](#) (TBD)
+- DM me on Instagram: [@donottakeifallergictorevenue](https://www.instagram.com/donottakeifallergictorevenue/)
+- Open an issue on [GitHub](https://github.com/tisa-pixel/ae-voice-assistant/issues)
 
 **Common questions:**
 - "Can this work with other CRMs?" → Yes, just swap the SF API calls
@@ -388,40 +215,41 @@ python app.py  # Test locally
 
 ---
 
-## RELATED BUILDS
+## 12. RELATED BUILDS
 
 | Build 1 | Build 2 | Build 3 |
 |---------|---------|---------|
-| **How I Automated Lead Distribution** | **How I Built an Outbound Dialer for $0** | **How I Track Lead Sources in Real-Time** |
-| Smart round-robin without expensive tools | Built a calling system using Retell AI | Automated attribution without paid software |
-| [View Build →](#) | [View Build →](#) | [View Build →](#) |
+| **Attempting Contact Cadence** | **Am I Spam? - Phone Reputation Checker** | **REI Lead Qualifier** |
+| 17-touch automated follow-up system in Salesforce | Check if your DIDs are flagged before campaigns | AI voice agent that qualifies leads and warm transfers |
+| [View Build](https://github.com/tisa-pixel/attempting-contact) | [View Build](https://github.com/tisa-pixel/am-i-spam) | [View Build](https://github.com/tisa-pixel/rei-lead-qualifier) |
 
 ---
 
-## METADATA
+## Additional Metadata (for SEO / Backend)
 
-**Tags:** #Salesforce #VoiceAI #Automation #RealEstateInvesting #RetellAI #Python #Heroku #FlaskApp #CRM #ProductivityTools
-
-**Duration:**
-- Video: ~15 minutes
-- Read time: ~10 minutes
-- Build time: 12-16 hours
-
-**Difficulty:** Intermediate (requires Python, API knowledge, prompt engineering)
-
-**Best for:**
-- REI teams with 3+ acquisition agents
-- Companies spending 10+ hours/week on manual data entry
-- Teams with poor CRM data quality
+**Published:** December 10, 2025
+**Author:** Tisa Daniels
+**Category:** Salesforce Automation / Voice AI / Real Estate Tech
+**Tags:** #Salesforce #VoiceAI #RetellAI #Python #Heroku #Automation #RealEstateInvesting
+**Estimated Read Time:** 8 minutes
+**Video Duration:** TBD
 
 ---
 
-**Built by:** Tisa Daniels | Catalyst Partners
-**Contact:** tisa@conversionisourgame.com
-**Book a call:** tisadaniels.com
+## Design Notes for Wix Implementation
+
+### Layout Style:
+- **Dark background** (charcoal #1B1C1D)
+- **High contrast text** (white headings, light gray body)
+- **Accent colors:** Blue (#2563eb), Green (#16a34a for "completed"), Orange (#f59e0b for "in progress")
+- **Clean, modern, mobile-first**
+
+### Call-to-Action Buttons:
+- **Primary CTA** (Clone on GitHub): Purple (#7c3aed)
+- **Secondary CTA** (Watch on YouTube): Blue (#2563eb)
 
 ---
 
-*🤖 Generated with [Claude Code](https://claude.com/claude-code)*
-
-*Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>*
+**Template Version:** 1.0
+**Created:** December 10, 2025
+**Build Time:** 12-16 hours
