@@ -39,6 +39,11 @@ Voice AI agent (via Retell) that enables Account Executives / Acquisition Agents
 | Ambient Sound Volume | 0.2 |
 | Reminder Trigger (ms) | 10000 |
 | Reminder Max Count | 2 |
+| Begin Message | "Hey, how'd it go at the appointment?" |
+| Begin Message Delay (ms) | 200 |
+| End Call After Silence (ms) | 30000 |
+| Max Call Duration (ms) | 479000 (~8 min) |
+| Ring Duration (ms) | 17000 |
 
 ### Webhook
 - URL: https://poppy-ae-assistant-f961c226aec0.herokuapp.com/webhook/retell
